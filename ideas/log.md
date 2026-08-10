@@ -13,6 +13,8 @@ Instructions pour l'agent qui écrit ici chaque semaine :
 ## Semaine du 2026-08-10
 
 > ⚠️ Le portail `portail-plai.vercel.app` était inaccessible depuis cette session cloud (réseau bloqué) — les 3 pistes ci-dessous n'ont **pas** été comparées aux outils déjà en production. À vérifier manuellement avant tout développement.
+>
+> **Vérification manuelle faite le 2026-08-10 : la piste 1 est un doublon confirmé.** [AccessActif](https://access-actif.vercel.app) (`projets/accesactif`, statut "en-développement" sur le portail) fait déjà exactement du "suivi des aménagements raisonnables par élève : checklists d'AR par enseignant, définitions de référence, tableau de bord d'équipe." **Écartée — ne pas développer comme app séparée.** Nuance réelle mais insuffisante pour justifier un nouveau repo : le README d'AccessActif reconnaît ne pas encore recueillir le retour des enseignants sur les AR effectivement appliqués en classe — c'est une extension à ajouter à AccessActif existant, pas une nouvelle idée.
 
 | Idée | Besoin de terrain identifié | Potentiel / valeur ajoutée | Risques (RGPD, coûts API/stockage) | Plan de dev proposé | Ancrage RISS |
 |---|---|---|---|---|---|
