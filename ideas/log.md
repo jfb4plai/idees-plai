@@ -10,6 +10,14 @@ Instructions pour l'agent qui écrit ici chaque semaine :
 
 ---
 
+## Note du 2026-09-28
+
+Pas une nouvelle idée d'app — ajout d'un skill de communication PLAI, adapté du skill marketing `/draft-content` (`anthropics/knowledge-work-plugins`) après usage réel sur Picto-lecture : email d'appel à classes pilotes, fiche 1 page, mode d'emploi. Ancrage obligatoire dans le code source réel de l'outil avant rédaction, vigilance FALC/ARASAAC, grilles de feedback fermées, règle RISS stricte.
+
+→ [`jfb4plai/skills4profs`, commit 468d7e2](https://github.com/jfb4plai/Skills4profs/commit/468d7e2)
+
+---
+
 ## Semaine du 2026-08-14
 
 > ⚠️ Portail `portail-plai.vercel.app` inaccessible depuis cette session cloud (réseau bloqué). Aucun dossier `projets/*` présent dans ce dépôt pour comparaison locale non plus. **À vérifier manuellement contre le portail avant tout développement**, en particulier la piste 3 (risque de recouvrement avec RituActif, horaire visuel déjà en production).
