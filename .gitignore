@@ -1,0 +1,5 @@
+# Dependances et secrets (ajoute 2026-10-04)
+node_modules/
+.env
+.env.*
+!.env*.example
