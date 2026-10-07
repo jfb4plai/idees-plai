@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Économiser son quota Claude</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap">
+<link rel="stylesheet" href="../css/plai.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Économiser son quota Claude</h1>
+    <p class="lead">Fiche pour les enseignants de nos écoles. Elle garde les règles utiles d'une newsletter du 7 octobre 2026 et laisse de côté le reste.</p>
+  </header>
+
+  <section aria-labelledby="essentiel">
+    <h2 id="essentiel">Les 3 habitudes qui comptent le plus</h2>
+
+    <div class="group">
+      <h3>Un sujet, une conversation</h3>
+      <ul>
+        <li><strong>Ouvrir</strong> une nouvelle conversation pour chaque sujet (séance, mail aux parents, évaluation).</li>
+        <li><strong>Demander</strong> un résumé avant de quitter une longue conversation.</li>
+        <li><strong>Coller</strong> ce résumé au début de la nouvelle conversation.</li>
+      </ul>
+      <div class="prompt">
+        <p id="p1">Résume cette conversation en 10 lignes : ce que nous avons décidé, ce qui reste ouvert, la prochaine étape.</p>
+        <button type="button" data-copy="p1">Copier</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3>Les documents dans un Projet</h3>
+      <ul>
+        <li><strong>Déposer</strong> une seule fois dans un Projet les documents que vous réutilisez (référentiels, grilles, fiches modèles).</li>
+        <li><strong>Convertir</strong> les PDF en texte avant de les envoyer (un PDF scanné coûte cher).</li>
+        <li><strong>Recadrer</strong> les captures d'écran sur la partie utile.</li>
+      </ul>
+    </div>
+
+    <div class="group">
+      <h3>Tout dans un seul message</h3>
+      <ul>
+        <li><strong>Regrouper</strong> toutes vos demandes dans un même message.</li>
+        <li><strong>Surligner</strong> la partie à changer, ou écrire « Refais seulement cette section, garde le reste ».</li>
+        <li><strong>Recommencer</strong> une conversation qui part de travers, avec un résumé de 3 lignes, plutôt que de corriger message après message.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="autres">
+    <h2 id="autres">Autres bons réflexes</h2>
+    <div class="group">
+      <ul>
+        <li><strong>Planifier</strong> en texte d'abord et <strong>demander</strong> le document final à la fin.</li>
+        <li><strong>Commencer</strong> par « Je veux [tâche] pour [résultat]. Pose-moi des questions avant de commencer » au lieu d'un très long prompt.</li>
+        <li><strong>Garder</strong> vos instructions personnelles courtes (la newsletter donne 2 000 mots comme maximum).</li>
+        <li><strong>Garder</strong> le même modèle pendant toute une conversation.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="adapter">
+    <h2 id="adapter">À adapter chez nous</h2>
+    <div class="group">
+      <ul>
+        <li><strong>Garder</strong> la recherche web active quand la question porte sur un programme ou une règle FWB actuelle. La newsletter conseille de la couper pour les questions rapides.</li>
+        <li><strong>Vérifier</strong> votre compteur dans Paramètres, puis Usage. C'est la mesure fiable pour votre offre.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="ignorer">
+    <h2 id="ignorer">À ignorer</h2>
+    <div class="two">
+      <div class="group">
+        <h3>Réservé à l'offre à 100 $</h3>
+        <ul>
+          <li>Les comparaisons de prix avec ChatGPT.</li>
+          <li>Le choix du modèle et du niveau d'effort conseillé par la newsletter.</li>
+          <li>Le reset gratuit et les rythmes dimanche et lundi.</li>
+        </ul>
+      </div>
+      <div class="group">
+        <h3>Pour développeurs</h3>
+        <ul>
+          <li>Claude Code et la commande /clear.</li>
+          <li>Les tâches planifiées.</li>
+          <li>Les images générées par code.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="warn" aria-labelledby="eleves">
+    <h2 id="eleves">Données d'élèves</h2>
+    <p>La newsletter n'en parle pas. Pour une école, cela passe avant toute économie de quota.</p>
+    <ul>
+      <li><strong>Remplacer</strong> les noms par « Élève A », « Élève B » avant de coller un texte.</li>
+      <li><strong>Retirer</strong> diagnostics, PIA, bulletins et coordonnées des documents envoyés.</li>
+      <li><strong>Demander</strong> à la direction les règles de l'école sur l'usage de l'IA avec des données d'élèves.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Source : newsletter « Limits » de Ruben Hassid (How to AI), 7 octobre 2026. Elle se termine par la vente d'un abonnement payant.</p>
+    <p>Les chiffres (SemiAnalysis, valeur du plan à 100 $) et le fonctionnement du cache n'ont pas été vérifiés. Les conseils d'usage ci-dessus sont des habitudes de bon sens, à confirmer avec votre propre compteur.</p>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var buttons = document.querySelectorAll("button[data-copy]");
+  Array.prototype.forEach.call(buttons, function (btn) {
+    btn.addEventListener("click", function () {
+      var node = document.getElementById(btn.getAttribute("data-copy"));
+      var text = node.textContent;
+      function selectText() {
+        var range = document.createRange();
+        range.selectNodeContents(node);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        btn.textContent = "Texte sélectionné";
+      }
+      function done() {
+        btn.textContent = "Copié";
+        setTimeout(function () { btn.textContent = "Copier"; }, 2000);
+      }
+      try {
+        navigator.clipboard.writeText(text).then(done, selectText);
+      } catch (e) {
+        selectText();
+      }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
