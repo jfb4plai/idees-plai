@@ -10,6 +10,16 @@ Instructions pour l'agent qui écrit ici chaque semaine :
 
 ---
 
+## Ajout manuel du 2026-10-11 (hors routine)
+
+> Idée prise d'un outil existant ([Roucoule](https://roucoule.forge.apps.education.fr/), forge des communs numériques éducatifs, France), adaptée au contexte PLAI. **Prototype déjà construit** : [`prototypes/coulon/`](../prototypes/coulon/). La routine ne doit pas la reproposer.
+
+| Idée | Besoin de terrain identifié | Potentiel / valeur ajoutée | Risques (RGPD, coûts API/stockage) | Plan de dev proposé | Ancrage RISS |
+|---|---|---|---|---|---|
+| **Coulon : du téléphone de l'élève à l'écran de la classe (mur de classe + comparaison)** | Projeter le travail d'un élève (cahier, assiette dressée, montage, schéma) passe aujourd'hui par un visualiseur, une clé USB, un mail ou une messagerie privée, ce qui pose problème pour le RGPD et prend du temps. En classe pro et dans le spécialisé, le retour collectif sur un geste se fait souvent de mémoire. | Envoi par QR code, sans compte. Extensions PLAI : mur de classe multi-élèves, comparaison de 2 productions côte à côte, pseudonymes animaux (aucun prénom), parcours élève FALC avec lecture vocale, suppression EXIF/GPS, distribution d'un document vers tous les téléphones, pause. Pas d'IA (0 coût API). | RGPD faible : pair-à-pair, rien de stocké, relais TURN publics désactivés. Le serveur de mise en relation PeerJS voit les IP (gratuit par défaut, à auto-héberger pour un usage durable). Pas d'authentification : le bouton Pause et le retrait par envoi compensent. Risque technique : réseau d'école filtré qui bloque le WebRTC direct. | Fait : prototype statique dans `prototypes/coulon/`, testé dans Chromium. À faire : repo `jfb4plai/coulon` → Vercel `coulon.jfb4plai.com` → test sur vrais téléphones et sur le Wi-Fi d'une école du Pôle → serveur PeerJS auto-hébergé si nécessaire. Pas de Supabase. | *Non vérifié (RISS hors cloud).* À passer à `moulinette-riss`, notamment sur le retour par comparaison de productions entre pairs. |
+
+---
+
 ## Semaine du 2026-08-14
 
 > ⚠️ Portail `portail-plai.vercel.app` inaccessible depuis cette session cloud (réseau bloqué). Aucun dossier `projets/*` présent dans ce dépôt pour comparaison locale non plus. **À vérifier manuellement contre le portail avant tout développement**, en particulier la piste 3 (risque de recouvrement avec RituActif, horaire visuel déjà en production).

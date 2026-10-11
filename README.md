@@ -16,6 +16,10 @@ Le tableau produit couvre, pour chaque idée : le besoin de terrain identifié, 
 
 Voir [`ideas/log.md`](ideas/log.md) — une section par semaine, la plus récente en haut.
 
+## Prototypes
+
+- [`prototypes/coulon/`](prototypes/coulon/) : **Coulon**, pour envoyer des photos et des fichiers du téléphone de l'élève vers l'écran de la classe (adaptation PLAI de Roucoule : mur de classe, comparaison, pseudonymes, parcours FALC). Statique, pair-à-pair, sans stockage.
+
 ## Licences
 
 - **Code** : [PolyForm Noncommercial 1.0.0](LICENSE). Usage non commercial uniquement.
