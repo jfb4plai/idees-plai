@@ -12,6 +12,10 @@ Le tableau produit couvre, pour chaque idée : le besoin de terrain identifié, 
 
 **La validation scientifique RISS n'est pas faite ici** — RISS reste local (`D:\RISS`), inaccessible au cloud. Après réception, passer le rapport au skill `moulinette-riss` en local pour l'annoter d'un ancrage RISS par idée.
 
+## Guides
+
+- [`guides/vibecoding-plai/`](guides/vibecoding-plai/) — fabriquer un outil PLAI en un seul fichier HTML avec Claude (adaptation du guide de François Jourde). Sous **CC BY-SA 4.0**, licence imposée par la source.
+
 ## Historique
 
 Voir [`ideas/log.md`](ideas/log.md) — une section par semaine, la plus récente en haut.
