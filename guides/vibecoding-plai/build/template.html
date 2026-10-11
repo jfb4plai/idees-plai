@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<!--
+  Page générée depuis jfb4plai/idees-plai : guides/vibecoding-plai/README.md
+  Contenu : adaptation du guide de François Jourde, CC BY-SA 4.0.
+  Code de la page : Jean-François Beguin · PLAI — PolyForm Noncommercial 1.0.0.
+  Aucune ressource externe : ni police distante, ni script tiers, ni mesure d'audience.
+-->
+<html lang="fr-BE">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>Fabriquer un outil avec Claude — JFB4PLAI</title>
+<meta name="description" content="Fabriquer un outil pédagogique en un seul fichier HTML avec Claude : prompts prêts à copier, contexte FWB, style PLAI.">
+<style>
+  :root {
+    --bg: #faf9f7; --surface: #ffffff; --surface2: #f4f2ee;
+    --border: #e8e4dd; --border-input: #857f76;
+    --text: #1a1814; --text2: #5a564f; --text3: #6f6a62;
+    --teal: #0f6e56; --teal-bg: #e1f5ee; --teal-border: #1d9e75;
+    --error: #a32d2d; --error-bg: #fcebeb; --error-border: #e24b4a;
+    --warn-bg: #fdf4e3; --warn-border: #c98a1b;
+    --radius: 10px; --radius-sm: 6px;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.7; }
+  a { color: var(--teal); text-underline-offset: 2px; }
+  :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .skip { position: absolute; left: -9999px; top: 0; background: var(--teal); color: #fff; padding: 8px 14px; z-index: 200; }
+  .skip:focus { left: 16px; top: 8px; }
+
+  .plai-nav { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); }
+  .plai-nav .inner { max-width: 760px; margin: 0 auto; padding: 0 16px; height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .plai-nav img { height: 40px; width: auto; display: block; }
+  .plai-nav a.retour { font-size: 13px; font-weight: 500; color: var(--text2); text-decoration: none; padding: 6px 10px; border-radius: var(--radius-sm); }
+  .plai-nav a.retour:hover { background: var(--surface2); color: var(--text); }
+
+  .container { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+  header.hero { padding: 2.5rem 0 1.5rem; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); border: 1px solid var(--border-input); padding: 3px 12px; border-radius: 20px; margin-bottom: 1rem; }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(1.8rem, 5vw, 2.4rem); line-height: 1.2; }
+  .soustitre { color: var(--text2); margin-top: .5rem; }
+
+  .sommaire { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.5rem; margin: 1rem 0 1.5rem; }
+  .sommaire h2 { font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--text2); margin: 0 0 .25rem; text-transform: uppercase; letter-spacing: .5px; }
+  .sommaire ol { columns: 2; column-gap: 2rem; padding-left: 1.2rem; font-size: 14px; }
+  .sommaire li { break-inside: avoid; }
+
+  section { padding: 2rem 0 1rem; border-top: 1px solid var(--border); }
+  h2 { font-family: var(--serif); font-weight: 400; font-size: 24px; line-height: 1.3; margin-bottom: 1rem; scroll-margin-top: 72px; }
+  h3 { font-size: 17px; font-weight: 600; margin: 1.5rem 0 .5rem; }
+  p, ul, ol, table, .prompt, .callout { margin-bottom: 1rem; }
+  ul, ol { padding-left: 1.4rem; }
+  li + li { margin-top: .25rem; }
+  code { font-family: var(--mono); font-size: .9em; background: var(--surface2); padding: 1px 5px; border-radius: 4px; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; }
+  th, td { text-align: left; padding: .5rem .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--surface2); font-weight: 600; }
+
+  .callout { border-left: 4px solid var(--teal-border); background: var(--teal-bg); border-radius: var(--radius-sm); padding: .9rem 1.1rem; }
+  .callout.warning { border-left-color: var(--warn-border); background: var(--warn-bg); }
+  .callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+  .callout ul { margin: .5rem 0 0; }
+
+  .prompt { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem; }
+  .prompt pre { font-family: var(--mono); font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; background: var(--surface2); border-radius: var(--radius-sm); padding: .9rem 1rem; max-height: 28rem; overflow: auto; }
+  .prompt-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-top: .6rem; }
+  .btn { background: var(--teal); color: #fff; border: 1px solid var(--teal); border-radius: var(--radius-sm); padding: 8px 18px; min-height: 40px; font: 500 14px var(--sans); cursor: pointer; }
+  .btn:hover { opacity: .88; }
+  .statut { margin: 0; font-size: 13px; font-weight: 500; }
+  .statut.ok { color: var(--teal); }
+  .statut.erreur { color: var(--error); }
+
+  footer { margin-top: 2rem; border-top: 1px solid var(--border); padding: 2rem 0 3rem; font-size: 13px; color: var(--text2); }
+  footer p + p { margin-top: .5rem; }
+  footer a { color: var(--text2); }
+
+  @media (max-width: 600px) { .sommaire ol { columns: 1; } h2 { font-size: 21px; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+  @media print { .plai-nav, .prompt-actions, .sommaire, .skip { display: none; } .prompt pre { max-height: none; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#contenu">Aller au contenu</a>
+
+<nav class="plai-nav" aria-label="Site">
+  <div class="inner">
+    <a href="/"><img src="/logo-jfb4plai.png" alt="JFB4PLAI, retour à l'accueil"></a>
+    <a class="retour" href="/">Tous les outils</a>
+  </div>
+</nav>
+
+<main id="contenu" class="container">
+  <header class="hero">
+    <p class="badge">Atelier IA</p>
+    <h1>{{TITRE}}</h1>
+    <p class="soustitre">{{SOUSTITRE}}</p>
+  </header>
+
+  <nav class="sommaire" aria-labelledby="t-sommaire">
+    <h2 id="t-sommaire">Sommaire</h2>
+    <ol>
+{{SOMMAIRE}}
+    </ol>
+  </nav>
+
+{{CONTENU}}
+</main>
+
+<footer>
+  <div class="container">
+    {{CREDITS}}
+    <p>PLAI — Pôle Liégeois d'Accompagnement vers une École Inclusive — FWB · <a href="/">jfb4plai.com</a></p>
+  </div>
+</footer>
+
+<script>
+  // Le bouton « Copier » d'un gabarit remplace la mention
+  // « [coller ici le bloc STYLE PLAI] » par le bloc lui-même : un seul collage suffit.
+  const REPERE = '[coller ici le bloc STYLE PLAI]';
+  const blocStyle = [...document.querySelectorAll('.prompt pre')]
+    .map(p => p.textContent).find(t => t.startsWith('# STYLE PLAI'));
+
+  function copierSecours(texte) {
+    const zone = document.createElement('textarea');
+    zone.value = texte;
+    zone.setAttribute('readonly', '');
+    zone.setAttribute('aria-hidden', 'true');
+    zone.style.cssText = 'position:fixed;top:0;left:-9999px;opacity:0;';
+    document.body.appendChild(zone);
+    zone.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    zone.remove();
+    return ok;
+  }
+
+  document.querySelectorAll('[data-copier]').forEach(bouton => bouton.addEventListener('click', async () => {
+    let texte = document.getElementById(bouton.dataset.copier).textContent;
+    const avecStyle = blocStyle && texte.includes(REPERE);
+    if (avecStyle) texte = texte.replace(REPERE, blocStyle);
+    let ok = false;
+    if (navigator.clipboard && window.isSecureContext) {
+      try { await navigator.clipboard.writeText(texte); ok = true; } catch (e) { ok = false; }
+    }
+    if (!ok) ok = copierSecours(texte);
+    document.querySelectorAll('.statut').forEach(s => { s.textContent = ''; });
+    const statut = bouton.nextElementSibling;
+    statut.className = 'statut ' + (ok ? 'ok' : 'erreur');
+    statut.textContent = ok
+      ? (avecStyle ? 'Copié, bloc STYLE PLAI inclus. Collez dans Claude.' : 'Copié. Collez dans Claude.')
+      : 'Copie impossible : sélectionnez le texte, puis Ctrl+C (Cmd+C sur Mac).';
+  }));
+</script>
+</body>
+</html>
