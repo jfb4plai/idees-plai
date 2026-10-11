@@ -1,4 +1,4 @@
-// Coulon — écran de la classe (récepteur).
+// TransfertActif — écran de la classe (récepteur).
 // Les fichiers arrivent en pair-à-pair (WebRTC) et ne vivent qu'en mémoire de cet onglet.
 'use strict';
 
@@ -47,8 +47,8 @@ function majTelephones() {
 // ---------- Mise en relation ----------
 
 function demarrer() {
-  etat.code = COULON.nouveauCode();
-  const pair = new Peer(COULON.idPair(etat.code), COULON.OPTIONS_PAIR);
+  etat.code = TRANSFERT.nouveauCode();
+  const pair = new Peer(TRANSFERT.idPair(etat.code), TRANSFERT.OPTIONS_PAIR);
   etat.pair = pair;
 
   pair.on('open', () => {
@@ -73,7 +73,7 @@ function demarrer() {
       return;
     }
     if (err.type === 'peer-unavailable') return; // concerne un téléphone parti, sans gravité
-    majEtat('🔴 ' + COULON.erreurLisible(err), 'ko');
+    majEtat('🔴 ' + TRANSFERT.erreurLisible(err), 'ko');
   });
 }
 
@@ -108,7 +108,7 @@ function recevoir(conn, msg) {
     }
     const donnees = msg.donnees;
     const taille = donnees && donnees.byteLength;
-    if (!taille || taille > COULON.TAILLE_MAX) {
+    if (!taille || taille > TRANSFERT.TAILLE_MAX) {
       conn.send({ type: 'refuse', id: msg.id, raison: 'taille' });
       return;
     }
@@ -130,7 +130,7 @@ function recevoir(conn, msg) {
 // N'accepte qu'un animal de la liste : rien d'autre que le pseudo ne s'affiche à l'écran.
 function validerAnimal(a) {
   if (!Array.isArray(a)) return null;
-  return COULON.ANIMAUX.find(([e, n]) => e === a[0] && n === a[1]) || null;
+  return TRANSFERT.ANIMAUX.find(([e, n]) => e === a[0] && n === a[1]) || null;
 }
 
 // ---------- Galerie ----------
@@ -183,7 +183,7 @@ function dessinerGalerie() {
     infos.innerHTML = '<span aria-hidden="true"></span><span class="qui"></span><span class="quand"></span>';
     infos.children[0].textContent = e.animal[0];
     infos.children[1].textContent = e.animal[1];
-    infos.children[2].textContent = heure(e.heure) + ' · ' + COULON.taille(e.taille);
+    infos.children[2].textContent = heure(e.heure) + ' · ' + TRANSFERT.taille(e.taille);
     infos.title = e.nom;
 
     const actions = document.createElement('div');
@@ -333,7 +333,7 @@ function fermerProjection() {
 
 async function distribuer(fichier) {
   if (!fichier) return;
-  if (fichier.size > COULON.TAILLE_MAX) { toast('Fichier trop lourd (max ' + COULON.taille(COULON.TAILLE_MAX) + ').'); return; }
+  if (fichier.size > TRANSFERT.TAILLE_MAX) { toast('Fichier trop lourd (max ' + TRANSFERT.taille(TRANSFERT.TAILLE_MAX) + ').'); return; }
   const ouvertes = [...etat.connexions.values()].filter((c) => c.conn.open);
   if (!ouvertes.length) { toast('Aucun téléphone connecté pour l\'instant.'); return; }
   const donnees = await fichier.arrayBuffer();

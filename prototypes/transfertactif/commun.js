@@ -1,8 +1,8 @@
-// Coulon — fonctions partagées entre l'écran (ecran.js) et le téléphone (envoyer.js).
+// TransfertActif — fonctions partagées entre l'écran (ecran.js) et le téléphone (envoyer.js).
 'use strict';
 
-const COULON = {
-  PREFIXE: 'plai-coulon-',
+const TRANSFERT = {
+  PREFIXE: 'plai-transfertactif-',
   // Pas de 0/O, 1/I/L : un code lisible à voix haute et au tableau.
   ALPHABET: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789',
   TAILLE_MAX: 25 * 1024 * 1024,

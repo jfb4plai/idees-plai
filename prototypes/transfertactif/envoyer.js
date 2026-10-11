@@ -1,4 +1,4 @@
-// Coulon — téléphone de l'élève (émetteur).
+// TransfertActif — téléphone de l'élève (émetteur).
 'use strict';
 
 const $ = (id) => document.getElementById(id);
@@ -40,21 +40,21 @@ function rejoindre(code) {
   etat.code = code;
   majEtat('⏳ Connexion…');
   if (etat.pair) etat.pair.destroy();
-  const pair = new Peer(COULON.OPTIONS_PAIR);
+  const pair = new Peer(TRANSFERT.OPTIONS_PAIR);
   etat.pair = pair;
 
   pair.on('open', connecterEcran);
   pair.on('error', (err) => {
     majEtat('🔴 Hors ligne', 'ko');
-    afficherErreur(COULON.erreurLisible(err));
+    afficherErreur(TRANSFERT.erreurLisible(err));
   });
 }
 
 function connecterEcran() {
-  const conn = etat.pair.connect(COULON.idPair(etat.code), { reliable: true, serialization: 'binary' });
+  const conn = etat.pair.connect(TRANSFERT.idPair(etat.code), { reliable: true, serialization: 'binary' });
   etat.conn = conn;
   const minuterie = setTimeout(() => {
-    if (!conn.open) afficherErreur(COULON.erreurLisible({ type: 'webrtc' }));
+    if (!conn.open) afficherErreur(TRANSFERT.erreurLisible({ type: 'webrtc' }));
   }, 15000);
 
   conn.on('open', () => {
@@ -102,7 +102,7 @@ function recevoir(msg) {
 function dessinerAnimaux() {
   const grille = $('animaux');
   grille.textContent = '';
-  COULON.ANIMAUX.forEach((a) => {
+  TRANSFERT.ANIMAUX.forEach((a) => {
     const b = document.createElement('button');
     b.className = 'animal';
     b.setAttribute('aria-pressed', String(!!etat.animal && etat.animal[1] === a[1]));
@@ -111,7 +111,7 @@ function dessinerAnimaux() {
     b.lastChild.textContent = a[1];
     b.onclick = () => {
       etat.animal = a;
-      memoire('coulon-animal-' + etat.code, a);
+      memoire('transfertactif-animal-' + etat.code, a);
       if (etat.conn && etat.conn.open) etat.conn.send({ type: 'bonjour', animal: a });
       dessinerAnimaux();
       montrer('etape-choisir');
@@ -147,8 +147,8 @@ async function preparer(fichier) {
       nom = nom.replace(/\.[^.]+$/, '') + '.jpg';
     } catch (_) { blob = fichier; } // format non décodable : envoyé tel quel
   }
-  if (blob.size > COULON.TAILLE_MAX) {
-    resultat('⚠️', 'Ce fichier est trop lourd (' + COULON.taille(blob.size) + '). Maximum : ' + COULON.taille(COULON.TAILLE_MAX) + '.', 'Ce fichier est trop lourd.');
+  if (blob.size > TRANSFERT.TAILLE_MAX) {
+    resultat('⚠️', 'Ce fichier est trop lourd (' + TRANSFERT.taille(blob.size) + '). Maximum : ' + TRANSFERT.taille(TRANSFERT.TAILLE_MAX) + '.', 'Ce fichier est trop lourd.');
     return;
   }
   if (etat.pret) URL.revokeObjectURL(etat.pret.apercu);
@@ -170,7 +170,7 @@ async function preparer(fichier) {
   } else {
     const d = document.createElement('div');
     d.className = 'fichier';
-    d.textContent = '📎 ' + nom + ' (' + COULON.taille(blob.size) + ')';
+    d.textContent = '📎 ' + nom + ' (' + TRANSFERT.taille(blob.size) + ')';
     apercu.append(d);
   }
   $('btn-envoyer').disabled = etat.pause;
@@ -206,13 +206,13 @@ function resultat(emoji, texte, aLire) {
   $('btn-autre').innerHTML = '<span class="emoji" aria-hidden="true">📷</span> Envoyer autre chose';
   $('btn-autre').onclick = () => montrer('etape-choisir');
   montrer('etape-resultat');
-  if (aLire) COULON.parler(aLire);
+  if (aLire) TRANSFERT.parler(aLire);
 }
 
 // ---------- Documents distribués par l'enseignant ----------
 
 function ajouterDocument(msg) {
-  if (!msg.donnees || !msg.donnees.byteLength || msg.donnees.byteLength > COULON.TAILLE_MAX) return;
+  if (!msg.donnees || !msg.donnees.byteLength || msg.donnees.byteLength > TRANSFERT.TAILLE_MAX) return;
   const blob = new Blob([msg.donnees], { type: typeof msg.mime === 'string' ? msg.mime : 'application/octet-stream' });
   const li = document.createElement('li');
   const a = document.createElement('a');
@@ -223,15 +223,15 @@ function ajouterDocument(msg) {
   li.append(a);
   $('liste-documents').prepend(li);
   $('documents').hidden = false;
-  COULON.parler('L\'enseignant t\'a envoyé un document.');
+  TRANSFERT.parler('L\'enseignant t\'a envoyé un document.');
 }
 
 // ---------- Démarrage ----------
 
-document.querySelectorAll('[data-lire]').forEach((b) => { b.onclick = () => COULON.parler(b.dataset.lire); });
+document.querySelectorAll('[data-lire]').forEach((b) => { b.onclick = () => TRANSFERT.parler(b.dataset.lire); });
 
 $('btn-code').onclick = () => {
-  const code = COULON.normaliserCode($('champ-code').value);
+  const code = TRANSFERT.normaliserCode($('champ-code').value);
   if (code.length !== 5) { $('champ-code').focus(); return; }
   location.hash = code;
   demarrer();
@@ -245,14 +245,14 @@ $('btn-changer-animal').onclick = () => { dessinerAnimaux(); montrer('etape-anim
 $('btn-autre').onclick = () => montrer('etape-choisir');
 
 function demarrer() {
-  const code = COULON.normaliserCode(location.hash.slice(1));
+  const code = TRANSFERT.normaliserCode(location.hash.slice(1));
   if (code.length !== 5) {
     majEtat('🔑 Code ?');
     montrer('etape-code');
     return;
   }
-  etat.animal = memoire('coulon-animal-' + code);
-  if (!COULON.ANIMAUX.some((a) => etat.animal && a[1] === etat.animal[1])) etat.animal = null;
+  etat.animal = memoire('transfertactif-animal-' + code);
+  if (!TRANSFERT.ANIMAUX.some((a) => etat.animal && a[1] === etat.animal[1])) etat.animal = null;
   ETAPES.forEach((e) => { $(e).hidden = true; });
   dessinerAnimaux();
   rejoindre(code);

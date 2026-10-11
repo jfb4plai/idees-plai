@@ -1,12 +1,12 @@
-# Coulon
+# TransfertActif
 
-<img src="logo.svg" alt="Logo Coulon" width="96" align="right">
+<img src="logo.svg" alt="Logo TransfertActif" width="96" align="right">
 
 **Du téléphone à l'écran de la classe, sans compte, sans installation, sans serveur de stockage.**
 
-*Coulon* veut dire pigeon en wallon (les colombophiles liégeois sont des « coulonneux »). C'est une adaptation PLAI de [Roucoule](https://roucoule.forge.apps.education.fr/) (forge des communs numériques éducatifs, France) : l'élève scanne un QR code projeté et sa photo arrive directement sur l'ordinateur relié au TBI ou au projecteur.
+TransfertActif est une adaptation PLAI de [Roucoule](https://roucoule.forge.apps.education.fr/) (forge des communs numériques éducatifs, France) : l'élève scanne un QR code projeté et sa photo arrive directement sur l'ordinateur relié au TBI ou au projecteur.
 
-## Ce que Coulon ajoute à l'idée de départ
+## Ce que TransfertActif ajoute à l'idée de départ
 
 | Extension | Pour qui / pourquoi |
 |---|---|
@@ -23,7 +23,7 @@
 
 - 100 % statique (HTML/CSS/JS, aucun build). Déployable tel quel sur Vercel, GitHub Pages ou un serveur d'école.
 - Transfert **pair-à-pair WebRTC** via [PeerJS](https://peerjs.com/) 1.5.4. Le serveur PeerJS ne sert qu'à la mise en relation (échange d'identifiants), les fichiers ne passent pas par lui.
-- **Relais TURN désactivés volontairement.** PeerJS 1.5.4 configure par défaut des relais publics (`eu-0.turn.peerjs.com`, `us-0.turn.peerjs.com`, constaté dans le code de la version 1.5.4 le 2026-10-11). Coulon les retire (`OPTIONS_PAIR` dans `commun.js`) : aucun fichier ne transite par un tiers. Contrepartie : sur un réseau d'école très filtré, la connexion directe peut échouer. Dans ce cas, passer le téléphone en 4G ou ajouter le TURN de l'établissement dans `iceServers`.
+- **Relais TURN désactivés volontairement.** PeerJS 1.5.4 configure par défaut des relais publics (`eu-0.turn.peerjs.com`, `us-0.turn.peerjs.com`, constaté dans le code de la version 1.5.4 le 2026-10-11). TransfertActif les retire (`OPTIONS_PAIR` dans `commun.js`) : aucun fichier ne transite par un tiers. Contrepartie : sur un réseau d'école très filtré, la connexion directe peut échouer. Dans ce cas, passer le téléphone en 4G ou ajouter le TURN de l'établissement dans `iceServers`.
 - Le STUN de Google (`stun.l.google.com`) reste utilisé pour découvrir l'adresse IP publique : il voit l'IP, pas les fichiers. À remplacer par un STUN européen ou d'école si besoin.
 - Rien n'est stocké : les envois vivent en mémoire de l'onglet et disparaissent à sa fermeture. Le seul stockage est le choix d'animal, en `sessionStorage` du téléphone.
 - Bibliothèques embarquées dans `vendor/` (PeerJS, qrcode-generator, MIT) : aucune requête vers un CDN.
@@ -42,13 +42,13 @@
 | `index.html` + `ecran.js` | Écran de classe : QR code, galerie, projection, comparaison, distribution |
 | `envoyer.html` + `envoyer.js` | Parcours élève sur téléphone |
 | `commun.js` | Constantes, pseudonymes, synthèse vocale, messages d'erreur |
-| `coulon.css` | Styles (mode clair/sombre, cibles tactiles ≥ 44 px) |
+| `transfertactif.css` | Styles (mode clair/sombre, cibles tactiles ≥ 44 px) |
 | `logo.svg` | Logo : pigeon voyageur portant une photo, jaune et rouge de Liège |
 
 ## Tester en local
 
 ```bash
-cd prototypes/coulon
+cd prototypes/transfertactif
 python3 -m http.server 8000
 # Ouvrir http://localhost:8000 sur l'ordinateur.
 # Pour un vrai téléphone, il faut du HTTPS : déployer (Vercel) ou passer par un tunnel.
@@ -58,4 +58,4 @@ Testé le 2026-10-11 dans Chromium (Playwright), avec un serveur PeerJS local : 
 
 ## Licence
 
-Code : PolyForm Noncommercial 1.0.0 (voir `LICENSE` à la racine). Logo Coulon : tous droits réservés, comme le reste de l'identité visuelle PLAI. Bibliothèques tierces : voir `vendor/LICENCES-TIERCES.md`.
+Code : PolyForm Noncommercial 1.0.0 (voir `LICENSE` à la racine). Logo TransfertActif : tous droits réservés, comme le reste de l'identité visuelle PLAI. Bibliothèques tierces : voir `vendor/LICENCES-TIERCES.md`.
