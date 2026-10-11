@@ -18,7 +18,7 @@ Voir [`ideas/log.md`](ideas/log.md) — une section par semaine, la plus récent
 
 ## Prototypes
 
-- [`prototypes/transfertactif/`](prototypes/transfertactif/) : **TransfertActif**, pour envoyer des photos et des fichiers du téléphone de l'élève vers l'écran de la classe (adaptation PLAI de Roucoule : mur de classe, comparaison, pseudonymes, parcours FALC). Statique, pair-à-pair, sans stockage.
+- [`prototypes/transfertactif/`](prototypes/transfertactif/) : **TransfertActif**, pour envoyer des photos et des fichiers du téléphone de l'élève vers l'écran de la classe (adaptation PLAI de Roucoule : mur de classe, comparaison, pseudonymes, parcours FALC). Statique, pair-à-pair, sans stockage. Dépôt dédié : [jfb4plai/TransfertActif](https://github.com/jfb4plai/TransfertActif).
 
 ## Licences
 
