@@ -1,0 +1,25 @@
+name: Capture d'écran PLAI - exécutable Windows
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ["capture-ecran/**"]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: capture-ecran
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest -q tests
+      - run: pyinstaller --noconfirm --onefile --windowed --name Capture-ecran-PLAI capture_ecran/__main__.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Capture-ecran-PLAI-windows
+          path: capture-ecran/dist/Capture-ecran-PLAI.exe
