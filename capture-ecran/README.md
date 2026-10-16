@@ -17,6 +17,10 @@ construire_exe.bat              # .exe autonome (PyInstaller) ; ou workflow GitH
 
 Pourquoi le menu reste ouvert : le raccourci est enregistré avec `RegisterHotKey` (Windows), la fenêtre active ne perd donc pas le focus ; la capture est prise **avant** toute fenêtre de l'outil, et le mode « zone » se fait sur l'image figée.
 
-Structure : `hotkeys` (raccourcis) · `grabber` (capture + pointeur) · `selector` (zone) · `annotate` (modèle + rendu Pillow) · `editor` (Tk) · `session` (série, JSON) · `exporter` (SRT, images, MP4 via ffmpeg, HTML) · `app` (fenêtre).
+Structure : `hotkeys` (raccourcis) · `grabber` (capture + pointeur) · `selector` (zone) · `annotate` (modèle + rendu Pillow) · `editor` (Tk) · `session` (série, JSON) · `exporter` (SRT, images, MP4 via ffmpeg, HTML, .docx écrit à la main) · `audio` (voix off : MCI Windows, aucune dépendance) · `steps` (série de clics : hook souris WH_MOUSE_LL + image tampon) · `app` (fenêtre).
 
 Licence : voir le dépôt parent (PolyForm Noncommercial 1.0.0).
+
+## Non vérifié sous Windows (écrit selon la documentation, testé seulement par simulation)
+Raccourcis globaux, hook souris `WH_MOUSE_LL`, enregistrement MCI du micro, presse-papiers, Paint, DPI.
+La logique (rendu, sessions, clics → captures, voix → piste audio, MP4, .docx) est couverte par `pytest` (30 tests).

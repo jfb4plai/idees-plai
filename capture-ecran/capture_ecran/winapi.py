@@ -101,3 +101,91 @@ def beep() -> None:
             winsound.MessageBeep()
         except Exception:
             pass
+
+
+def foreground_is_own_process() -> bool:
+    """Vrai si la fenêtre active appartient à ce programme (pour ignorer nos propres clics)."""
+    if not IS_WIN:
+        return False
+    import ctypes
+    import os
+    from ctypes import wintypes
+    user32 = ctypes.windll.user32
+    hwnd = user32.GetForegroundWindow()
+    if not hwnd:
+        return False
+    pid = wintypes.DWORD()
+    user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+    return pid.value == os.getpid()
+
+
+class MouseHook:
+    """Écoute globale des clics (WH_MOUSE_LL) dans un thread dédié.
+
+    callback(bouton, x, y) est appelé DANS le thread du hook, AVANT que l'application
+    cliquée ne reçoive le clic : il doit rester très rapide (mettre dans une file, rien d'autre).
+    """
+
+    def __init__(self, callback):
+        import threading
+        self.callback = callback
+        self.ready = threading.Event()
+        self.error = ""
+        self._tid = 0
+        self._thread = threading.Thread(target=self._run, daemon=True)
+
+    def start(self):
+        self._thread.start()
+        self.ready.wait(2)
+        return not self.error
+
+    def _run(self):
+        if not IS_WIN:
+            self.error = "L'enregistrement des clics n'existe que sous Windows."
+            self.ready.set()
+            return
+        import ctypes
+        from ctypes import wintypes
+        user32 = ctypes.WinDLL("user32", use_last_error=True)
+        kernel32 = ctypes.WinDLL("kernel32")
+        kernel32.GetModuleHandleW.restype = ctypes.c_void_p
+        kernel32.GetModuleHandleW.argtypes = [ctypes.c_wchar_p]
+        self._tid = kernel32.GetCurrentThreadId()
+        LRESULT = ctypes.c_ssize_t
+        HOOKPROC = ctypes.WINFUNCTYPE(LRESULT, ctypes.c_int, wintypes.WPARAM, wintypes.LPARAM)
+
+        class MSLLHOOKSTRUCT(ctypes.Structure):
+            _fields_ = [("pt", wintypes.POINT), ("mouseData", wintypes.DWORD), ("flags", wintypes.DWORD),
+                        ("time", wintypes.DWORD), ("dwExtraInfo", ctypes.c_size_t)]
+
+        user32.SetWindowsHookExW.argtypes = [ctypes.c_int, HOOKPROC, ctypes.c_void_p, wintypes.DWORD]
+        user32.SetWindowsHookExW.restype = ctypes.c_void_p
+        user32.CallNextHookEx.argtypes = [ctypes.c_void_p, ctypes.c_int, wintypes.WPARAM, wintypes.LPARAM]
+        user32.CallNextHookEx.restype = LRESULT
+        user32.UnhookWindowsHookEx.argtypes = [ctypes.c_void_p]
+
+        def proc(n_code, w_param, l_param):
+            if n_code >= 0 and w_param in (0x0201, 0x0204):  # WM_LBUTTONDOWN / WM_RBUTTONDOWN
+                try:
+                    s = ctypes.cast(l_param, ctypes.POINTER(MSLLHOOKSTRUCT)).contents
+                    self.callback("left" if w_param == 0x0201 else "right", s.pt.x, s.pt.y)
+                except Exception:
+                    pass  # un hook ne doit jamais lever
+            return user32.CallNextHookEx(None, n_code, w_param, l_param)
+
+        self._proc = HOOKPROC(proc)  # référence conservée : sinon le ramasse-miettes détruit le callback
+        hook = user32.SetWindowsHookExW(14, self._proc, kernel32.GetModuleHandleW(None), 0)  # WH_MOUSE_LL
+        if not hook:
+            self.error = "Windows a refusé l'écoute des clics (antivirus ou stratégie de l'école ?)."
+            self.ready.set()
+            return
+        self.ready.set()
+        msg = wintypes.MSG()
+        while user32.GetMessageW(ctypes.byref(msg), None, 0, 0) > 0:
+            pass
+        user32.UnhookWindowsHookEx(hook)
+
+    def stop(self):
+        if IS_WIN and self._tid:
+            import ctypes
+            ctypes.WinDLL("user32").PostThreadMessageW(self._tid, 0x0012, 0, 0)  # WM_QUIT

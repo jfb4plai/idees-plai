@@ -5,19 +5,20 @@ import os
 import queue
 import subprocess
 import sys
+import time
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog, ttk
 
 from PIL import Image, ImageTk
 
-from . import APP_NAME, __version__, config, exporter, grabber, winapi
+from . import APP_NAME, __version__, config, exporter, grabber, steps, winapi
 from .editor import Editor, launch_paint
 from .hotkeys import HotkeyListener, parse_hotkey, pretty
 from .selector import select_region
 from .session import Session
 
-MODES = {"full": "Écran entier", "region": "Zone", "window": "Fenêtre active"}
+MODES = {"full": "Écran entier", "region": "Zone", "window": "Fenêtre active", "steps": "Série de clics"}
 
 
 class App(tk.Tk):
@@ -25,13 +26,17 @@ class App(tk.Tk):
         winapi.set_dpi_aware()
         super().__init__()
         self.title(f"{APP_NAME} {__version__}")
-        self.geometry("640x760")
-        self.minsize(580, 700)
+        self.geometry("740x780")
+        self.minsize(700, 700)
         self.cfg = config.load()
         self.session: Session | None = None
         self.busy = False
         self.events: queue.Queue[str] = queue.Queue()
         self.listener: HotkeyListener | None = None
+        self.recorder: steps.StepRecorder | None = None
+        self.frames: steps.FrameBuffer | None = None
+        self.hook: winapi.MouseHook | None = None
+        self.clicks: queue.Queue = queue.Queue()
         self._thumb = None
         self._build_ui()
         self._start_hotkeys()
@@ -43,7 +48,7 @@ class App(tk.Tk):
         pad = {"padx": 10, "pady": 4}
         head = ttk.Frame(self)
         head.pack(fill="x", **pad)
-        self.hint = ttk.Label(head, justify="left", font=("Segoe UI", 11), wraplength=580)
+        self.hint = ttk.Label(head, justify="left", font=("Segoe UI", 10), wraplength=700)
         self.hint.pack(anchor="w")
 
         btns = ttk.LabelFrame(self, text=" Prendre une capture ")
@@ -54,8 +59,16 @@ class App(tk.Tk):
                                            ("⏱  Dans 3 secondes", lambda: self.request("full", delay=3))]):
             ttk.Button(btns, text=text, command=cmd).grid(row=0, column=col, padx=4, pady=6, sticky="ew")
             btns.columnconfigure(col, weight=1)
-        ttk.Label(btns, text="Astuce menu déroulant : « Dans 3 secondes », ouvrez votre menu, patientez.",
-                  foreground="#555").grid(row=1, column=0, columnspan=4, pady=(0, 6))
+        self.steps_btn = ttk.Button(btns, text="●  Enregistrer mes clics (une capture numérotée par clic)",
+                                    command=lambda: self.request("steps"))
+        self.steps_btn.grid(row=1, column=0, columnspan=4, padx=4, pady=(0, 2), sticky="ew")
+        self.v_moment = tk.StringVar(value=self.cfg["steps_moment"])
+        mrow = ttk.Frame(btns)
+        mrow.grid(row=2, column=0, columnspan=4, pady=(0, 4))
+        ttk.Label(mrow, text="Image prise :").pack(side="left")
+        for val, txt in (("avant", "juste avant le clic (recommandé)"), ("apres", "0,5 s après le clic")):
+            ttk.Radiobutton(mrow, text=txt, value=val, variable=self.v_moment,
+                            command=self._save_opts).pack(side="left", padx=6)
 
         opts = ttk.LabelFrame(self, text=" Options ")
         opts.pack(fill="x", **pad)
@@ -81,7 +94,7 @@ class App(tk.Tk):
         self.title_lbl.pack(anchor="w", padx=8, pady=(4, 0))
         mid = ttk.Frame(serie)
         mid.pack(fill="both", expand=True, padx=8, pady=4)
-        self.listbox = tk.Listbox(mid, height=7, activestyle="dotbox", font=("Segoe UI", 10), exportselection=False)
+        self.listbox = tk.Listbox(mid, height=5, activestyle="dotbox", font=("Segoe UI", 10), exportselection=False)
         self.listbox.pack(side="left", fill="both", expand=True)
         self.listbox.bind("<Double-Button-1>", lambda e: self.edit_selected())
         self.listbox.bind("<<ListboxSelect>>", lambda e: self._show_thumb())
@@ -91,30 +104,32 @@ class App(tk.Tk):
         row.pack(fill="x", padx=8, pady=(0, 6))
         for text, cmd in [("✎ Modifier", self.edit_selected), ("▲", lambda: self.move(-1)), ("▼", lambda: self.move(1)),
                           ("🗑 Supprimer", self.delete_selected), ("📁 Dossier", self.open_folder),
-                          ("Nouvelle série", self.new_session), ("Rouvrir…", self.open_session)]:
+                          ("Nouvelle série", self.new_session), ("Rouvrir…", self.open_session),
+                          ("↻ Renuméroter", self.renumber)]:
             ttk.Button(row, text=text, command=cmd, width=3 if text in "▲▼" else None).pack(side="left", padx=2)
 
         out = ttk.LabelFrame(self, text=" Créer à partir de la série ")
         out.pack(fill="x", **pad)
-        ttk.Button(out, text="🎬  Vidéo avec sous-titres", command=self.export_video).pack(side="left", padx=6, pady=6)
-        ttk.Button(out, text="📄  Fiche pas à pas (HTML/PDF)", command=self.export_html).pack(side="left", padx=6)
-        ttk.Button(out, text="⚙  Raccourcis…", command=self.settings).pack(side="right", padx=6)
+        ttk.Button(out, text="🎬 Vidéo", command=self.export_video).pack(side="left", padx=4, pady=6)
+        ttk.Button(out, text="📝 Document Word", command=self.export_word).pack(side="left", padx=4)
+        ttk.Button(out, text="📄 Fiche HTML/PDF", command=self.export_html).pack(side="left", padx=4)
+        ttk.Button(out, text="⚙ Réglages…", command=self.settings).pack(side="right", padx=4)
 
-        self.status = ttk.Label(self, text="Prêt.", anchor="w", relief="sunken", padding=(6, 2), wraplength=600)
+        self.status = ttk.Label(self, text="Prêt.", anchor="w", relief="sunken", padding=(6, 2), wraplength=700)
         self.status.pack(fill="x", side="bottom")
 
     def _refresh_hint(self):
         k = self.cfg
         txt = (f"1. Ouvrez votre menu déroulant, puis 2. appuyez sur :\n"
-               f"      {pretty(k['hotkey_full'])}  →  écran entier\n"
-               f"      {pretty(k['hotkey_region'])}  →  choisir une zone\n"
-               f"      {pretty(k['hotkey_window'])}  →  fenêtre active\n"
-               f"(sur un portable, ajoutez la touche Fn si besoin)")
+               f"   {pretty(k['hotkey_full'])} écran entier   •   {pretty(k['hotkey_region'])} zone   •   "
+               f"{pretty(k['hotkey_window'])} fenêtre\n"
+               f"   {pretty(k['hotkey_steps'])} démarrer / arrêter la série de clics   (portable : + touche Fn)")
         self.hint.config(text=txt)
 
     def _save_opts(self):
         self.cfg.update(draw_cursor=self.v_cursor.get(), click_halo=self.v_halo.get(),
-                        copy_clipboard=self.v_clip.get(), after_capture=self.v_after.get())
+                        copy_clipboard=self.v_clip.get(), after_capture=self.v_after.get(),
+                        steps_moment=self.v_moment.get())
         config.save(self.cfg)
 
     def say(self, text: str):
@@ -126,7 +141,7 @@ class App(tk.Tk):
             self.listener.stop()
         self.listener = HotkeyListener(
             {"full": self.cfg["hotkey_full"], "region": self.cfg["hotkey_region"],
-             "window": self.cfg["hotkey_window"]}, self.events.put)
+             "window": self.cfg["hotkey_window"], "steps": self.cfg["hotkey_steps"]}, self.events.put)
         self.listener.start()
         self.listener.ready.wait(2)
         self._refresh_hint()
@@ -134,6 +149,7 @@ class App(tk.Tk):
             self.say("⚠ " + " ; ".join(f"{MODES[k]} : {v}" for k, v in self.listener.errors.items()))
 
     def _poll(self):
+        self._drain_clicks()
         try:
             while True:
                 self.request(self.events.get_nowait())
@@ -141,8 +157,105 @@ class App(tk.Tk):
             pass
         self.after(100, self._poll)
 
+    # ------------------------------------------------------------------ série de clics
+    def toggle_steps(self):
+        if self.recorder:
+            self.stop_steps()
+        elif not self.busy:
+            self.start_steps()
+
+    def start_steps(self):
+        if self.session and self.session.captures:
+            ans = messagebox.askyesnocancel(
+                APP_NAME, "Ajouter les clics à la série en cours ?\n\nOui = à la suite\nNon = nouvelle série", parent=self)
+            if ans is None:
+                return
+            if not ans:
+                self.session = None
+        if self.session is None:
+            self.session = Session.new(Path(self.cfg["base_dir"]))
+            self.title_lbl.config(text=self.session.title)
+        self.hook = winapi.MouseHook(self._hook_click)
+        if not self.hook.start():
+            messagebox.showerror(APP_NAME, self.hook.error)
+            self.hook = None
+            return
+        vs = winapi.virtual_screen()
+        self.recorder = steps.StepRecorder(self.session, (vs[0], vs[1]) if vs else (0, 0), self.v_cursor.get())
+        self.frames = None
+        if self.v_moment.get() == "avant":
+            self.frames = steps.FrameBuffer()
+            self.frames.start()
+        self._was_visible = self.state() == "normal"
+        self.iconify()
+        self.title(f"● Enregistrement des clics — {pretty(self.cfg['hotkey_steps'])} pour arrêter")
+        winapi.beep()
+
+    def _hook_click(self, button: str, x: int, y: int):
+        """Thread du hook, avant que l'application ne reçoive le clic : rester ultra rapide."""
+        if winapi.foreground_is_own_process():
+            return
+        frame = self.frames.latest if self.frames else None
+        self.clicks.put((button, (x, y), frame, time.monotonic()))
+
+    def _drain_clicks(self):
+        while True:
+            try:
+                button, pos, frame, t = self.clicks.get_nowait()
+            except queue.Empty:
+                return
+            if not self.recorder or self.busy:
+                continue
+            if frame is None:  # mode « après » : on attend le résultat du clic
+                self.after(500, lambda b=button, p=pos, tt=t: self._click_after(b, p, tt))
+            else:
+                self._record_click(button, pos, frame, t)
+
+    def _click_after(self, button, pos, t):
+        if self.recorder:
+            frame, _ = grabber.grab_screen(draw_cursor=False)
+            self._record_click(button, pos, frame, t)
+
+    def _record_click(self, button, pos, frame, t):
+        try:
+            self.recorder.on_click(button, pos, frame, t)
+            winapi.beep()
+            self.title(f"● {self.recorder.count} clic(s) — {pretty(self.cfg['hotkey_steps'])} pour arrêter")
+        except Exception as e:
+            self.say("Erreur pendant l'enregistrement d'un clic : " + str(e))
+
+    def stop_steps(self):
+        rec, self.recorder = self.recorder, None
+        if self.hook:
+            self.hook.stop()
+            self.hook = None
+        if self.frames:
+            self.frames.stop()
+            self.frames = None
+        while not self.clicks.empty():
+            self.clicks.get_nowait()
+        self.title(f"{APP_NAME} {__version__}")
+        self.deiconify()
+        self._fill_list(select=len(self.session.captures) - 1 if self.session and self.session.captures else None)
+        n = rec.count if rec else 0
+        self.say(f"{n} étape(s) enregistrée(s). Double-cliquez une ligne pour l'améliorer (légende, flèches, voix).")
+        winapi.beep()
+
+    def renumber(self):
+        if not (self.session and self.session.captures):
+            return
+        n = steps.renumber_steps(self.session)
+        self._fill_list(keep=True)
+        self.say(f"{n} pastille(s) renumérotée(s)." if n else "Les numéros sont déjà dans le bon ordre.")
+
     # ------------------------------------------------------------------ capture
     def request(self, mode: str, delay: int = 0):
+        if mode == "steps":
+            self.toggle_steps()
+            return
+        if self.recorder:
+            self.say("Une série de clics est en cours : arrêtez-la d'abord.")
+            return
         if self.busy:
             self.say("Terminez d'abord l'action en cours (éditeur ou sélection ouvert).")
             return
@@ -315,8 +428,20 @@ class App(tk.Tk):
         self.say(res.message)
         messagebox.showinfo(APP_NAME, f"{res.message}\n\nDossier : {out}\n"
                                       f"• {len(res.frames)} images 1920×1080 avec sous-titres incrustés\n"
-                                      "• soustitres.srt\n" + ("• video.mp4\n" if res.mp4 else ""))
+                                      "• soustitres.srt\n" + ("• voixoff.wav (votre voix)\n" if res.voice else "")
+                                      + ("• video.mp4\n" if res.mp4 else ""))
         self._open(out)
+
+    def export_word(self):
+        if not self._need_session():
+            return
+        try:
+            path = exporter.export_docx(self.session, self.session.folder / "document.docx")
+        except Exception as e:
+            messagebox.showerror(APP_NAME, f"Échec de l'export Word : {e}")
+            return
+        self.say(f"Document créé : {path}")
+        self._open(path)
 
     def export_html(self):
         if not self._need_session():
@@ -342,7 +467,8 @@ class App(tk.Tk):
         dlg.transient(self)
         dlg.grab_set()
         fields = {}
-        rows = [("hotkey_full", "Écran entier"), ("hotkey_region", "Zone"), ("hotkey_window", "Fenêtre active")]
+        rows = [("hotkey_full", "Écran entier"), ("hotkey_region", "Zone"), ("hotkey_window", "Fenêtre active"),
+                ("hotkey_steps", "Série de clics (début/fin)")]
         ttk.Label(dlg, text="Format : ctrl+maj+f9   (évitez Ctrl+Alt = AltGr du clavier belge)").grid(
             row=0, column=0, columnspan=2, padx=10, pady=8)
         for i, (key, label) in enumerate(rows, start=1):
@@ -350,12 +476,12 @@ class App(tk.Tk):
             v = tk.StringVar(value=self.cfg[key].replace("shift", "maj"))
             ttk.Entry(dlg, textvariable=v, width=22).grid(row=i, column=1, padx=8)
             fields[key] = v
-        ttk.Label(dlg, text="Dossier des captures :").grid(row=4, column=0, sticky="e", padx=8, pady=8)
+        ttk.Label(dlg, text="Dossier des captures :").grid(row=5, column=0, sticky="e", padx=8, pady=8)
         vdir = tk.StringVar(value=self.cfg["base_dir"])
-        ttk.Entry(dlg, textvariable=vdir, width=40).grid(row=4, column=1, padx=8)
+        ttk.Entry(dlg, textvariable=vdir, width=40).grid(row=5, column=1, padx=8)
         ttk.Button(dlg, text="Parcourir…",
                    command=lambda: vdir.set(filedialog.askdirectory(initialdir=vdir.get()) or vdir.get())
-                   ).grid(row=4, column=2, padx=4)
+                   ).grid(row=5, column=2, padx=4)
 
         def apply():
             for key, v in fields.items():
@@ -373,7 +499,7 @@ class App(tk.Tk):
             if not (self.listener and self.listener.errors):
                 self.say("Réglages enregistrés.")
 
-        ttk.Button(dlg, text="Enregistrer", command=apply).grid(row=5, column=0, columnspan=3, pady=10)
+        ttk.Button(dlg, text="Enregistrer", command=apply).grid(row=6, column=0, columnspan=3, pady=10)
 
     def _quit(self):
         if self.listener:

@@ -10,7 +10,7 @@ from tkinter import messagebox, ttk
 
 from PIL import Image, ImageTk
 
-from . import annotate, winapi
+from . import annotate, audio, winapi
 from .session import Capture, Session
 
 TOOLS = [  # clé, pictogramme, libellé, aide
@@ -56,8 +56,10 @@ def ask_text(parent: tk.Misc, title: str, initial: str = "") -> str | None:
 
 
 class Editor(tk.Toplevel):
-    def __init__(self, master, session: Session, cap: Capture, on_close=None):
+    def __init__(self, master, session: Session, cap: Capture, on_close=None, recorder=None):
         super().__init__(master)
+        self.recorder = recorder if recorder is not None else audio.make_recorder()
+        self.recording = False
         self.session, self.cap, self.on_close = session, cap, on_close
         self.base = session.load_original(cap)
         self.items: list[dict] = copy.deepcopy(cap.items)
@@ -123,6 +125,22 @@ class Editor(tk.Toplevel):
 
         bottom = ttk.Frame(self, padding=(6, 4))
         bottom.pack(side="bottom", fill="x")
+        voice_row = ttk.Frame(bottom)
+        voice_row.pack(fill="x", pady=(0, 4))
+        self.rec_btn = ttk.Button(voice_row, text="🎙 Enregistrer ma voix", command=self.toggle_record)
+        self.rec_btn.pack(side="left", padx=2)
+        self.play_btn = ttk.Button(voice_row, text="▶ Écouter", command=self.play_voice)
+        self.play_btn.pack(side="left", padx=2)
+        self.del_btn = ttk.Button(voice_row, text="✖ Effacer la voix", command=self.delete_voice)
+        self.del_btn.pack(side="left", padx=2)
+        self.voice_lbl = ttk.Label(voice_row, text="", foreground="#555")
+        self.voice_lbl.pack(side="left", padx=8)
+        if self.recorder is None:
+            for b in (self.rec_btn, self.play_btn, self.del_btn):
+                b.state(["disabled"])
+            self.voice_lbl.config(text="(voix off disponible sous Windows)")
+        else:
+            self._update_voice_label()
         cap_row = ttk.Frame(bottom)
         cap_row.pack(fill="x")
         ttk.Label(cap_row, text="Légende (sous-titre de la vidéo, facultatif) :").pack(side="left")
@@ -332,6 +350,56 @@ class Editor(tk.Toplevel):
             self.selected = None
             self._invalidate()
 
+    # ------------------------------------------------------------------ voix off
+    def _update_voice_label(self):
+        has = self.session.has_audio(self.cap)
+        if self.recording:
+            self.voice_lbl.config(text="● Enregistrement… lisez votre légende, puis cliquez sur « Arrêter »")
+        elif has:
+            secs = audio.wav_duration(self.session.audio_path(self.cap))
+            self.voice_lbl.config(text=f"Voix enregistrée : {secs:.1f} s")
+        else:
+            self.voice_lbl.config(text="Pas de voix pour cette capture")
+        self.play_btn.state(["!disabled"] if has and not self.recording else ["disabled"])
+        self.del_btn.state(["!disabled"] if has and not self.recording else ["disabled"])
+
+    def toggle_record(self):
+        if self.recorder is None:
+            return
+        if not self.recording:
+            audio.stop_play()
+            try:
+                self.recorder.start()
+            except audio.AudioError as e:
+                messagebox.showerror("Micro", str(e), parent=self)
+                return
+            self.recording = True
+            self.rec_btn.config(text="⏹ Arrêter")
+            self.status.config(text="Dites : « " + (self.caption.get().strip() or "…") + " »")
+        else:
+            self._stop_recording()
+        self._update_voice_label()
+
+    def _stop_recording(self):
+        if not self.recording:
+            return
+        self.recording = False
+        self.rec_btn.config(text="🎙 Enregistrer ma voix")
+        try:
+            self.recorder.stop(self.session.audio_path(self.cap))
+            self.status.config(text="Voix enregistrée : cliquez sur « Écouter » pour la vérifier.")
+        except audio.AudioError as e:
+            messagebox.showerror("Micro", str(e), parent=self)
+
+    def play_voice(self):
+        if self.session.has_audio(self.cap):
+            audio.play(self.session.audio_path(self.cap))
+
+    def delete_voice(self):
+        audio.stop_play()
+        self.session.audio_path(self.cap).unlink(missing_ok=True)
+        self._update_voice_label()
+
     # ------------------------------------------------------------------ sortie
     def _final(self) -> Image.Image:
         return annotate.render(self.base, self.items, 1.0)
@@ -343,6 +411,8 @@ class Editor(tk.Toplevel):
         return final
 
     def _close(self):
+        self._stop_recording()
+        audio.stop_play()
         self.destroy()
         if self.on_close:
             self.on_close()

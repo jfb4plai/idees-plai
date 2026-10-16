@@ -73,6 +73,12 @@ class Session:
     def original_path(self, cap: Capture) -> Path:
         return self.folder / "originales" / cap.name
 
+    def audio_path(self, cap: Capture) -> Path:
+        return self.folder / "audio" / f"capture_{cap.id:03d}.wav"
+
+    def has_audio(self, cap: Capture) -> bool:
+        return self.audio_path(cap).is_file()
+
     def load_original(self, cap: Capture) -> Image.Image:
         with Image.open(self.original_path(cap)) as im:
             return im.convert("RGB")
@@ -100,7 +106,7 @@ class Session:
         self.save()
 
     def remove(self, cap: Capture) -> None:
-        for p in (self.final_path(cap), self.original_path(cap)):
+        for p in (self.final_path(cap), self.original_path(cap), self.audio_path(cap)):
             p.unlink(missing_ok=True)
         self.captures.remove(cap)
         self.save()

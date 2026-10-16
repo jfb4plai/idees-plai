@@ -12,14 +12,14 @@
    - `durees.txt` : durée de chaque image ;
    - **`video.mp4`** si le programme `ffmpeg` est présent (voir plus bas).
 
-La durée de chaque image est calculée selon la longueur de la légende (minimum 3 s, maximum 15 s).
+La durée de chaque image est calculée selon la longueur de la légende (minimum 3 s, maximum 15 s). **Si vous avez enregistré votre voix**, l'image reste affichée au moins aussi longtemps que la voix (+ 0,6 s) : la parole n'est jamais coupée. Le dossier contient alors aussi `voixoff.wav`, la piste complète déjà synchronisée avec les images, et le MP4 la contient.
 
 ## Voie 2 — sans ffmpeg : assembler dans Clipchamp (Windows 11)
 Clipchamp est intégré à Windows 11 (version gratuite : export 1080p sans filigrane d'après des sources secondaires, à vérifier).
 1. Ouvrez **Clipchamp** → *Créer une vidéo*.
 2. Glissez les `image_001.png`… dans la médiathèque, puis sur la ligne de temps, **dans l'ordre**.
 3. Réglez la durée de chaque image en tirant son bord (voir `durees.txt`).
-4. *(Facultatif)* Ajoutez une musique douce ou enregistrez votre voix avec *Enregistrer et créer → Audio*.
+4. *(Facultatif)* Glissez `voixoff.wav` sur la ligne de temps, sous les images : elle est déjà synchronisée (si vous avez gardé les durées par défaut de `durees.txt`).
 5. **Exporter → 1080p** → fichier MP4.
 
 Les sous-titres sont **déjà dans les images** : inutile d'importer le `.srt`. (Je n'ai pas pu confirmer que Clipchamp accepte l'import d'un fichier .srt ; ne comptez pas dessus.)

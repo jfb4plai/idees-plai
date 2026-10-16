@@ -10,6 +10,8 @@ DEFAULTS = {
     "hotkey_full": "ctrl+shift+f9",
     "hotkey_region": "ctrl+shift+f10",
     "hotkey_window": "ctrl+shift+f11",
+    "hotkey_steps": "ctrl+shift+f12",
+    "steps_moment": "avant",     # avant | apres
     "draw_cursor": True,
     "click_halo": True,
     "copy_clipboard": True,
